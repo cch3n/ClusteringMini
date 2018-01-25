@@ -1,0 +1,89 @@
+
+
+Load and view data.
+```{r}
+# Now load the data and look at the first few rows
+data(wine, package="rattle.data")
+head(wine)
+```
+
+Exercise 1: Remove the first column from the data and scale
+it using the scale() function
+
+```{r}
+wine1 <- wine[2:14]
+wine2 <- scale(wine1)
+```
+
+Method 1: A plot of the total within-groups sums of squares against the 
+number of clusters in a K-means solution can be helpful. A bend in the 
+graph can suggest the appropriate number of clusters. 
+
+```{r}
+wssplot <- function(data, nc=15, seed=1234){
+	            wss <- (nrow(data)-1)*sum(apply(data,2,var))
+               	      for (i in 2:nc){
+		                      set.seed(seed)
+	                        wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+	                plot(1:nc, wss, type="b", xlab="Number of Clusters",
+	                        ylab="Within groups sum of squares")
+	   }
+
+wssplot(wine2)
+```
+
+Exercise 2:
+* How many clusters does this method suggest? 
+Method 1 suggests 3 clusters, we know this because it is the area where the curve drops and cluster 4 and beyond the difference is not as great. 
+* Why does this method work? What's the intuition behind it?
+The intuition is that kgroups are grouped by minimum sum of squares. After three clusters the decrease drops off, thus 3 clusters should be our optimal number. 
+* Look at the code for wssplot() and figure out how it works
+
+Method 2: Use the NbClust library, which runs many experiments
+and gives a distribution of potential number of clusters.
+
+```{r}
+
+library(NbClust)
+set.seed(1234)
+nc <- NbClust(wine2, min.nc=2, max.nc=15, method="kmeans")
+barplot(table(nc$Best.n[1,]),
+	          xlab="Numer of Clusters", ylab="Number of Criteria",
+		            main="Number of Clusters Chosen by 26 Criteria")
+```
+
+Exercise 3: How many clusters does this method suggest?
+This method suggests 3 clusters based on the bar plot, with 14 attributes.
+
+Exercise 4: Once you've picked the number of clusters, run k-means 
+using this number of clusters. Output the result of calling kmeans()
+into a variable fit.km
+
+```{r}
+set.seed(1234)
+fit.km <- kmeans(wine2, centers = 3, nstart=25)
+fit.km$size
+```
+
+Exercise 5: using the table() function, show how the clusters in fit.km$clusters
+compares to the actual wine types in wine$Type. Would you consider this a good
+clustering?
+
+```{r}
+table(wine$Type, fit.km$cluster)
+```
+
+Yes this is a good cluster, only 6 wines were misplaced.
+
+Exercise 6:
+* Visualize these clusters using  function clusplot() from the cluster library
+* Would you consider this a good clustering?
+
+```{r}
+library(cluster)
+clusplot(wine, fit.km$cluster)
+```
+
+The cluster plot explains 57.38%. It could be a stronger clustering. 
+
+
